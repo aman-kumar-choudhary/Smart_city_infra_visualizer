@@ -66,23 +66,15 @@
 
     <div id="map"></div>
 
-    <!-- Load script.js from static folder -->
     <script>
-      // Initialize the map centered on Delhi
       const map = L.map("map").setView([28.6139, 77.209], 6);
-
-      // Add OpenStreetMap tiles
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors",
         maxZoom: 18,
       }).addTo(map);
-
-      // Function to fetch and display GeoJSON data
       async function loadLocations() {
         try {
           document.getElementById("status").textContent = "Loading data...";
-
-          // FIXED: Removed 'cd ' typo from the URL
           const response = await fetch("/api/locations");
 
           if (!response.ok) {
@@ -90,18 +82,13 @@
           }
 
           const geoJsonData = await response.json();
-
-          // Clear existing GeoJSON layers (keep tile layer)
           map.eachLayer((layer) => {
             if (layer instanceof L.GeoJSON) {
               map.removeLayer(layer);
             }
           });
-
-          // Add GeoJSON layer to map
           const geoJsonLayer = L.geoJSON(geoJsonData, {
             pointToLayer: function (feature, latlng) {
-              // Customize markers based on type
               let markerColor = "blue";
               switch (feature.properties.type) {
                 case "War Memorial":
@@ -148,7 +135,6 @@
               });
             },
             onEachFeature: function (feature, layer) {
-              // Add popup with information
               layer.bindPopup(`
                     <b>${feature.properties.name}</b><br>
                     Type: ${feature.properties.type}<br>
@@ -157,8 +143,6 @@
                 `);
             },
           }).addTo(map);
-
-          // Fit map to show all markers with padding
           map.fitBounds(geoJsonLayer.getBounds(), { padding: [50, 50] });
 
           document.getElementById(
@@ -170,15 +154,10 @@
             "Error loading data. Make sure Flask server is running.";
         }
       }
-
-      // Set up event listener for button
       document.addEventListener("DOMContentLoaded", function () {
-        // Add event listener to the button
         document
           .getElementById("refreshBtn")
           .addEventListener("click", loadLocations);
-
-        // Load data when page loads
         loadLocations();
       });
     </script>
