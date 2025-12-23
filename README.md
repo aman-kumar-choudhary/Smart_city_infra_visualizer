@@ -34,6 +34,8 @@ A CSV file containing infrastructure data:
 
 Name,Type,Lat,Lon
 
+Here , i have used 10 famous location in Delhi which include India Gate,Jama masjid,Cannught Place etc. To find the location based on the latitude and longitude , i have used the website "https://gps-coordinates.org/" to get the coordinates.
+
 # API Endpoint
 
 GET
