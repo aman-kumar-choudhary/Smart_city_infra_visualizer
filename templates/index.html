@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart City Dashboard</title>
+    <!-- Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <!-- Leaflet JS -->
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <style>
+      #map {
+        height: 85vh;
+        width: 100%;
+        border-radius: 10px;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .controls {
+        margin: 10px 0;
+        text-align: center;
+      }
+      button {
+        padding: 10px 20px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      #status {
+        margin-left: 10px;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Smart City Infrastructure Dashboard</h1>
+      <p>Dynamic visualization of city infrastructure using GeoJSON data</p>
+    </div>
+
+    <div class="controls">
+      <button id="refreshBtn">Refresh Data</button>
+      <span id="status">Ready to load data...</span>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- Load script.js from static folder -->
+    <script>
+      // Initialize the map centered on Delhi
+      const map = L.map("map").setView([28.6139, 77.209], 6);
+
+      // Add OpenStreetMap tiles
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+        maxZoom: 18,
+      }).addTo(map);
+
+      // Function to fetch and display GeoJSON data
+      async function loadLocations() {
+        try {
+          document.getElementById("status").textContent = "Loading data...";
+
+          // FIXED: Removed 'cd ' typo from the URL
+          const response = await fetch("/api/locations");
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const geoJsonData = await response.json();
+
+          // Clear existing GeoJSON layers (keep tile layer)
+          map.eachLayer((layer) => {
+            if (layer instanceof L.GeoJSON) {
+              map.removeLayer(layer);
+            }
+          });
+
+          // Add GeoJSON layer to map
+          const geoJsonLayer = L.geoJSON(geoJsonData, {
+            pointToLayer: function (feature, latlng) {
+              // Customize markers based on type
+              let markerColor = "blue";
+              switch (feature.properties.type) {
+                case "War Memorial":
+                  markerColor = "gray";
+                  break;
+                case "Landmark":
+                  markerColor = "red";
+                  break;
+                case "Minar":
+                  markerColor = "orange";
+                  break;
+                case "Tomb":
+                  markerColor = "brown";
+                  break;
+                case "Temple":
+                  markerColor = "purple";
+                  break;
+                case "Market":
+                  markerColor = "yellow";
+                  break;
+                case "Mosque":
+                  markerColor = "green";
+                  break;
+                case "Gurudwara":
+                  markerColor = "blue";
+                  break;
+                case "Residence":
+                  markerColor = "pink";
+                  break;
+                case "Commercial Area":
+                  markerColor = "cyan";
+                  break;
+                default:
+                  markerColor = "blue";
+              }
+
+              return L.circleMarker(latlng, {
+                radius: 8,
+                fillColor: markerColor,
+                color: "#000",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8,
+              });
+            },
+            onEachFeature: function (feature, layer) {
+              // Add popup with information
+              layer.bindPopup(`
+                    <b>${feature.properties.name}</b><br>
+                    Type: ${feature.properties.type}<br>
+                    Coordinates: ${feature.geometry.coordinates[1].toFixed(4)}, 
+                    ${feature.geometry.coordinates[0].toFixed(4)}
+                `);
+            },
+          }).addTo(map);
+
+          // Fit map to show all markers with padding
+          map.fitBounds(geoJsonLayer.getBounds(), { padding: [50, 50] });
+
+          document.getElementById(
+            "status"
+          ).textContent = `Loaded ${geoJsonData.features.length} locations successfully!`;
+        } catch (error) {
+          console.error("Error loading data:", error);
+          document.getElementById("status").textContent =
+            "Error loading data. Make sure Flask server is running.";
+        }
+      }
+
+      // Set up event listener for button
+      document.addEventListener("DOMContentLoaded", function () {
+        // Add event listener to the button
+        document
+          .getElementById("refreshBtn")
+          .addEventListener("click", loadLocations);
+
+        // Load data when page loads
+        loadLocations();
+      });
+    </script>
+  </body>
+</html>
